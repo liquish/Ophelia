@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Personal assistant A.I">
+    <meta name="author" content="Jervac">
+    <title>Ophelia - The clever bastard</title>
+    <!-- Artyom Library: http://sdkcarlos.github.io/sites/artyom.html -->
+    <script src="artyom.min.js"></script>
+    <script src="read-each-line.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+    <script type="application/javascript" src="https://api.ipify.org?format=jsonp&callback=getIP"></script>
+
+
+    <style>
+
+        html {
+            background: #3E4651;
+        }
+
+        input {
+            display: inline;
+            border: 7px solid #250A29;
+            width: 140px;
+            height: 60px;
+            margin-right: 70px;
+            margin-left: 70px;
+            background: #00f0ff;
+            color: #250A29;
+            font-family: monospace;
+            font-size: 20px;
+        }
+
+        #output {
+            margin: 0px auto;
+            font-family: sans-serif;
+            font-style: oblique;
+            font-size: 45px;
+            width: 100%;
+            height: 500px;
+            position: relative;
+            color: rgb(50, 50, 50);
+            line-height: 100px;
+            background: #FFFFFF;
+            -webkit-border-radius: 8px;
+            -moz-border-radius: 8px;
+            border-radius: 8px;
+        }
+
+        #content {
+            width: 1000px;
+            height: 600px;
+            margin-top: 50px;
+        }
+
+        #commands-list {
+            font-size: 20px;
+        }
+
+        b {
+            margin: 10px;
+            display: inline-grid;
+            color: rgb(50, 50, 50);
+        }
+
+        #ip {
+            opacity: 0;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<center>
+    <div id="content">
+
+        <div id="output"></div>
+        <br><br><br><br><br>
+        <input type="button" onclick="startArtyom()" value="Start">
+        <input type="button" onclick="stopArtyom()" value="Stop">
+        <br><br><br>
+        <b style="font-size: 25px; color: black;">Commands</b>
+        <br><br><br>
+
+        <div id="commands-list">
+            <b>[ Hello, Hey, Hi ]</b>
+            <b>[ Bye, Goodbye, See you ]</b>
+            <b>[ What time is it? ]</b>
+            <br><br>
+            <b>[ Where am I? ]</b>
+            <b>[ Tell me a joke ]</b>
+            <b>[ Take me to * ]</b>
+            <br><br>
+            <b>[ Set alarm for * (ex. "Set alarm for 5" sets timer for 5 mins) ]</b>
+            <br><br>
+            <b>[ Shut up ]</b>
+            <b>[ Stop the alarm ]</b>
+        </div>
+
+    </div>
+</center>
+
+
+<div id="sound_element"></div>
+<script>
+    var lastAction;
+    var ipAdress = 0;
+
+    var alarmState = false;
+    var roosterSound = new Audio('rooster.wav');
+
+    var jokes = ["why did the chicken cross the road? to get to the other side", "Jesus fed 5000, but Hitler made 6 million jews toast.", "Why did Hitler kill himself? He saw the gas bill", "What's the difference between ur mum and the Titanic? Only 1500 people went down on the titanic.", "Why did Princess Diana cross the road? Momentum.", "My wife has 3 oranges in her right hand and 5 oranges in her left hand. What does she have? No chance of blocking an upper cut.", "A clown and a 7 year old are walking through a dark forrest. The 7 year old says he's scared. The clown replies 'You think you're scared? I\'m gonna have to walk back alone!'", "What's the best way to get chewing gum out of your hair? Cancer.", "What's the worst part about being a black jew? You have to sit at the back of the oven.", "I'd tell you a joke, but it's like food. Not everyone gets it.", "What's white on top and black on the bottom? Society.", "I took an IQ test and the results were negative. ", "You can't have everything; where would you put it? ", "The severity of the itch is inversely proportional to the ability to reach it. ", "He who laughs last thinks slowest. ", "We have enough youth. How about a fountain of Smart? ", "Give me ambiguity or give me something else. ", "How do you stop a Mexican tank? Shoot the guy pushing it. ", "Did you hear about that one Mexican that went to college? Yeah.. me neither. ", "What's a Mexican favorite book store? Borders. ", "2 Mexicans are in a car, who is driving? A cop. ", "Why do Mexican kids walk around school like they own the place? Because their dads built it and their mom clean it. ", "What do you call a Mexican in a two-story house? Adopted. ", "How come there aren't any Mexicans on Star Trek? They don't work in the future, either. ", "Why do Mexicans re-fry their beans? Have you seen a Mexican do anything right the first time? ", "Why are Mexicans so short? They all live in basement apartments. ", "Whatâ€™s the difference between oral sex and anal sex? Oral sex makes your day; anal sex makes your hole weak. "];
+    var currentJoke = "";
+
+    function tellJoke() {
+        var aJoke = jokes[Math.floor(Math.random() * jokes.length)];
+        sayThis(aJoke);
+    }
+
+
+    function stopAlarm() {
+        alarmState = false;
+        roosterSound.loop = false;
+        roosterSound.stop();
+    }
+
+    function ping() {
+        alarmState = true;
+        roosterSound.play();
+        roosterSound.loop = alarmState;
+    }
+
+    function sayThis(phrase) {
+        document.getElementById("output").innerHTML = phrase;
+        artyom.say(phrase);
+    }
+
+    function openTab(url) {
+        var win = window.open(url);
+        if (win) {
+            win.focus();
+        } else {
+            alert('Please allow popups for this command to work');
+        }
+    }
+
+    function getIP(json) {
+        ipAdress = json.ip;
+    }
+
+    function timeThis(aFunction, format, duration) {
+        var SECOND = 1000;
+        var MINUTE = SECOND * 60;
+        var HOUR = MINUTE * 60;
+        var funky = aFunction;
+        if (format == "seconds") {
+            setTimeout(funky, duration * SECOND);
+        } else if (format == "minutes") {
+            setTimeout(funky, duration * MINUTE);
+        } else if (format == "hours") {
+            setTimeout(funky, duration * HOUR);
+        }
+    }
+
+</script>
+
+<script>
+
+    artyom.addCommands([
+        {
+            description: "Greet",
+            indexes: ["hello", "hey", "Yo", "What up", "What's up", "How's it going", "How are you", "Greetings", "Who are you", "Ophelia"],
+            action: function (i) {
+                if (i == 0 || i == 1 || i == 2) {
+                    sayThis("Greetings. I am Ophelia.");
+                } else if (i == 3 || i == 4) {
+                    var upStuff = ["The CO2 levels", "Well, nothing much goes on in this web page", "Debt, am I right?"];
+                    sayThis(upStuff[Math.floor(Math.random() * upStuff.length)]);
+                } else if (i == 8) {
+                    sayThis("I am Ophelia, a personal assistant with some jokes and pretty cool functionality.");
+                    sayThis("Ophelia is Greek for Help. Helping is what I do.");
+                } else if (i == 9) {
+                    sayThis("What is it?");
+                } else {
+                    sayThis("I've been byte r. See what I did there?");
+                }
+            }
+        },
+        {
+            description: "Say goodbye",
+            indexes: ["goodbye"],
+            action: function () {
+                sayThis("Don't say goodbye. I will always love you.");
+            }
+        },
+        {
+            description: "Get time",
+            indexes: ["What time is it", "Ophelia time"],
+            action: function (i) {
+                var currentdate = new Date();
+                if (currentdate.getHours() == 0) {
+                    var datetime = "The current time is "
+                            + (currentdate.getHours() + 12) + " "
+                            + currentdate.getMinutes()
+                } else if (currentdate.getHours() > 12) {
+                    var datetime = "The current time is "
+                            + (currentdate.getHours() - 12) + " "
+                            + currentdate.getMinutes()
+                } else {
+                    var datetime = "The current time is "
+                            + currentdate.getHours() + " "
+                            + currentdate.getMinutes()
+                }
+                document.getElementById('output').innerHTML = datetime;
+                artyom.say(datetime);
+            }
+        },
+        {
+            description: "Where am I",
+            indexes: ["Where am I"],
+            action: function (i, wildcard) {
+                document.getElementById("output").innerHTML = ipAdress;
+                artyom.say("Your IP adress is " + document.getElementById("output").innerHTML);
+            }
+        },
+        {
+            description: "Go to a website",
+            indexes: ["Take me to *"],
+            smart: true,
+            action: function (i, wildcard) {
+                artyom.say("Taking you to " + wildcard);
+                openTab("http://" + wildcard);
+            }
+        },
+        {
+            description: "Sets Timer",
+            indexes: ["set alarm for * seconds", "Set alarm for * minutes", "Set alarm for * hours", "Set alarm for *"],
+            smart: true,
+            action: function (i, wildcard) {
+                var unit;
+                if (i == 0) {
+                    unit = "seconds";
+                    sayThis("Setting alarm for " + wildcard + " " + unit);
+                    timeThis(ping, unit, wildcard);
+                } else if (i == 1) {
+                    unit = "minutes";
+                    sayThis("Setting alarm for " + wildcard + " " + unit);
+                    timeThis(ping, unit, wildcard);
+                } else if (i == 2) {
+                    unit = "hours";
+                    sayThis("Setting alarm for " + wildcard + " " + unit);
+                    timeThis(ping, unit, wildcard);
+                }
+                else if(i == 3 && typeof wildcard == "number"){//TODO: Doesn't work
+                    sayThis(wildcard + " what?");
+                } else {
+                    sayThis("Please say a specific unit of time.")
+                }
+
+            }
+        },
+        {
+            description: "Stops alarm and Ophelia",
+            indexes: ["Shut up", "Ophelia stop", "stop talking", "turn off the alarm", "turn the alarm off", "turn off alarm", "turn if off", "stop"],
+            action: function (i, wildcard) {
+                if (alarmState == true) {
+                    sayThis("Turning off alarm.");
+                    stopAlarm();
+                } else {
+                    artyom.shutUp();
+                }
+            }
+        },
+        {
+            description: "Tells a joke",
+            indexes: ["Tell me a joke", "Tell a joke", "Say a joke", "Humor me", "Make me laugh"],
+            action: function (i) {
+                var gig = Math.random() * 10;
+                if (gig == 20) {
+                    sayThis("Prepare to giggle.");
+                    tellJoke();
+                } else {
+                    tellJoke();
+                }
+            }
+        },
+        {
+            description: "Repeat last said",
+            indexes: ["Repeat", "What did you say", "Say it again", " Again please"],
+            action: function (i) {
+                sayThis("I said " + artyom.repeatLastSay(false).text)
+            }
+        }
+    ]);
+
+
+    //  Show recofnized text
+    artyom.redirectRecognizedTextOutput(function (text, isFinal) {
+        var span = document.getElementById('output');
+
+        if (isFinal) {
+            span.innerHTML = '';
+        } else {
+            span.innerHTML = text;
+        }
+    });
+
+    function startArtyom() {
+        var working = artyom.initialize({
+            executionKeyword: "now please",
+            lang: "en",
+            continuous: true,
+            debug: true,
+            listen: true,
+            volume: 0.9,
+            speed: 0.9
+        });
+
+        if (working) {
+			sayThis("Hello, Master");
+        } else {
+            alert("Error with Ophelia :(");
+        }
+    }
+
+    function stopArtyom() {
+        artyom.fatality();
+    }
+
+    window.onload = function () {
+        startArtyom();
+    };
+</script>
+
+</body>
+</html>
